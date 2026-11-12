@@ -16,7 +16,7 @@ app = FastAPI(title="PayPilot API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "https://paypilotpaypal.vercel.app/"],
+    allow_origins=[settings.frontend_url, "https://paypilotpaypal.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

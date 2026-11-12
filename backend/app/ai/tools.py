@@ -227,6 +227,51 @@ def send_invoice(ctx: ToolContext, a: InvoiceNumberArgs) -> dict:
 def cancel_invoice(ctx: ToolContext, a: InvoiceNumberArgs) -> dict:
     return _propose(ctx, a.invoice_number, "cancel_invoice")
 
+class CreateReminderArgs(BaseModel):
+    invoice_number: str | None = Field(default=None, max_length=32)
+    customer_name: str | None = Field(default=None, max_length=160)
+
+
+def create_reminder(ctx: ToolContext, a: CreateReminderArgs) -> dict:
+    from app.services import reminder_service
+
+    if not a.invoice_number and not a.customer_name:
+        return {"error": "Provide an invoice number or a customer name"}
+
+    if a.invoice_number:
+        inv = _find_invoice(ctx, a.invoice_number)
+        if not inv:
+            return {"error": f"No invoice {a.invoice_number} found"}
+        targets = [inv]
+    else:
+        custs = list(
+            ctx.db.scalars(
+                select(Customer).where(
+                    Customer.business_id == ctx.business.id, Customer.name.ilike(f"%{a.customer_name.strip()}%")
+                )
+            )
+        )
+        if not custs:
+            return {"error": f"No customer matching '{a.customer_name}'"}
+        if len(custs) > 1:
+            return {"error": "Several customers match: " + ", ".join(c.name for c in custs[:5]) + ". Ask which one."}
+        targets = svc.list_invoices(ctx.db, ctx.business.id, "SENT", 200, 0)
+        targets = [i for i in targets if i.customer_id == custs[0].id][:5]
+        if not targets:
+            return {"error": f"{custs[0].name} has no unpaid sent invoices"}
+
+    results = []
+    for inv in targets:
+        if inv.status != InvoiceStatus.SENT:
+            results.append({"invoice": inv.number, "error": "Only sent, unpaid invoices can get reminders"})
+            continue
+        r = reminder_service.generate(ctx.db, ctx.business, inv.id)
+        results.append({"invoice": inv.number, "customer": inv.customer.name, "amount_usd": _money(inv.amount), "drafted_message": r.message})
+    return {
+        "status": "draft_saved",
+        "note": "Saved as a DRAFT on the Reminders page for the owner to review and approve. Nothing was sent.",
+        "reminders": results,
+    }
 
 # ---------- registry ----------
 @dataclass
@@ -287,6 +332,14 @@ TOOLS: dict[str, ToolSpec] = {
         InvoiceNumberArgs, cancel_invoice,
         "Prepare cancelling an unpaid invoice. Requires user confirmation; does not execute.",
         _obj(_INV_NUM, ["invoice_number"]),
+    ),
+    "create_reminder": ToolSpec(
+        CreateReminderArgs, create_reminder,
+        "Draft a payment reminder for an unpaid sent invoice (by invoice number) or for a customer's unpaid invoices (by customer name). Saves a draft only; never sends.",
+        _obj({
+            "invoice_number": {"type": "STRING", "description": "e.g. INV-0003"},
+            "customer_name": {"type": "STRING", "description": "Full or partial customer name"},
+        }),
     ),
 }
 

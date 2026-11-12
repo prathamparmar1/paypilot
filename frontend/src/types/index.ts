@@ -81,3 +81,40 @@ export interface PendingActionOut {
   summary: string;
   expires_at: string;
 }
+
+export interface ReminderCandidate {
+  invoice_id: string;
+  number: string;
+  customer_name: string;
+  amount: string;
+  currency: string;
+  due_date: string;
+  display_status: string;
+  days_overdue: number;
+  has_draft: boolean;
+  last_reminded_at: string | null;
+}
+
+export interface Reminder {
+  id: string;
+  invoice_id: string;
+  invoice_number: string;
+  customer_name: string;
+  amount: string;
+  currency: string;
+  due_date: string;
+  invoice_status: string;
+  message: string;
+  status: "DRAFT" | "APPROVED" | "DISMISSED";
+  created_at: string;
+  approved_at: string | null;
+}
+
+export interface InsightsResponse {
+  stats: {
+    monthly_revenue: { label: string; revenue_usd: string; payments: number }[];
+    overdue_aging: { bucket: string; count: number; amount_usd: string }[];
+  };
+  insights: string[];
+  ai_generated: boolean;
+}

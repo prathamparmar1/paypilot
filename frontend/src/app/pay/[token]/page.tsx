@@ -2,7 +2,7 @@
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { CheckCircle2, ShieldCheck, Wallet, XCircle } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -19,7 +19,7 @@ interface PublicInvoice {
   paypal_client_id: string;
 }
 
-export default function PayPage() {
+function PayContent() {
   const { token } = useParams<{ token: string }>();
   const [inv, setInv] = useState<PublicInvoice | null>(null);
   const [error, setError] = useState("");
@@ -128,5 +128,18 @@ function Row({ label, value }: { label: string; value: string }) {
       <dt className="text-slate-400">{label}</dt>
       <dd className="text-right font-medium text-slate-800">{value}</dd>
     </div>
+  );
+}
+export default function PayPage() {
+  return (
+    <Suspense
+      fallback={
+        <Shell>
+          <div className="h-48 animate-pulse rounded-xl bg-slate-100" />
+        </Shell>
+      }
+    >
+      <PayContent />
+    </Suspense>
   );
 }

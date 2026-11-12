@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { DashboardSummary } from "@/types";
+import { InsightsPanel } from "@/components/dashboard/InsightsPanel";
 
 export default function DashboardPage() {
   const { business, token } = useAuth();
@@ -48,6 +49,8 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+      
+      <InsightsPanel />
 
       <section>
         <h2 className="mb-3 text-base font-semibold text-slate-900">Recent transactions</h2>

@@ -49,6 +49,8 @@ function PayContent() {
       </Shell>
     );
 
+  const paypalClientId = inv.paypal_client_id.trim();
+
   return (
     <Shell>
       <p className="text-sm text-slate-500">{inv.business_name}</p>
@@ -78,28 +80,48 @@ function PayContent() {
             {inv.display_status === "OVERDUE" && (
               <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">This invoice is overdue.</p>
             )}
-            <PayPalScriptProvider options={{ clientId: inv.paypal_client_id, currency: inv.currency, intent: "capture" }}>
-              <PayPalButtons
-                style={{ layout: "vertical", shape: "rect" }}
-                createOrder={async () => {
-                  setMessage("");
-                  const r = await api<{ order_id: string }>(`/pay/${token}/create-order`, { method: "POST" });
-                  return r.order_id;
-                }}
-                onApprove={async (data) => {
-                  try {
-                    await api(`/pay/${token}/capture`, {
-                      method: "POST",
-                      body: JSON.stringify({ order_id: data.orderID }),
-                    });
-                  } catch (e) {
-                    setMessage(e instanceof Error ? e.message : "Could not confirm payment.");
-                  }
-                  load(); // status shown comes from the server, not from this callback
-                }}
-                onError={() => setMessage("Something went wrong with PayPal. You have not been charged. Please try again.")}
-              />
-            </PayPalScriptProvider>
+            {paypalClientId ? (
+              <PayPalScriptProvider options={{ clientId: paypalClientId, currency: inv.currency, intent: "capture" }}>
+                <PayPalButtons
+                  style={{ layout: "vertical", shape: "rect" }}
+                  createOrder={async () => {
+                    setMessage("");
+                    try {
+                      const r = await api<{ order_id: string }>(`/pay/${token}/create-order`, { method: "POST" });
+                      return r.order_id;
+                    } catch (e) {
+                      setMessage(e instanceof Error ? e.message : "Could not start payment. Please try again.");
+                      throw e;
+                    }
+                  }}
+                  onApprove={async (data) => {
+                    try {
+                      await api(`/pay/${token}/capture`, {
+                        method: "POST",
+                        body: JSON.stringify({ order_id: data.orderID }),
+                      });
+                    } catch (e) {
+                      setMessage(e instanceof Error ? e.message : "Could not confirm payment.");
+                    }
+                    load(); // status shown comes from the server, not from this callback
+                  }}
+                  onError={(error) => {
+                    const detail = typeof error.message === "string" ? error.message : "";
+                    setMessage(
+                      (current) =>
+                        current ||
+                        (detail
+                          ? `PayPal could not complete checkout: ${detail}`
+                          : "Something went wrong with PayPal. You have not been charged. Please try again."),
+                    );
+                  }}
+                />
+              </PayPalScriptProvider>
+            ) : (
+              <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Online payment is temporarily unavailable. Please contact the business to arrange payment.
+              </p>
+            )}
             {message && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{message}</p>}
           </>
         )}

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = "http://localhost:3000", "https://paypilotpaypal.vercel.app/"
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
     paypal_client_id: str = ""

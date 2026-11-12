@@ -6,7 +6,7 @@ from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import setup_logging
 from app.routers import health
-from app.routers import auth, business, customers, dashboard, health, invoices, payments, public_pay, webhooks
+from app.routers import ai, auth, business, customers, dashboard, health, invoices, payments, public_pay, webhooks
 
 setup_logging()
 settings = get_settings()
@@ -32,6 +32,7 @@ app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(public_pay.router, prefix="/api/v1")
 app.include_router(webhooks.router, prefix="/api/v1")
 app.include_router(payments.router, prefix="/api/v1")
+app.include_router(ai.router, prefix="/api/v1")
 
 @app.on_event("startup")
 def on_startup():

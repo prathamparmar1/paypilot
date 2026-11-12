@@ -52,3 +52,32 @@ export interface DashboardSummary {
     verified_at: string;
   }[];
 }
+
+export interface InvoiceDraft {
+  customer_name: string | null;
+  customer_email: string | null;
+  description: string | null;
+  amount: string | null;
+  due_date: string | null;
+}
+
+export interface AIParseResult {
+  status: "ready" | "needs_clarification";
+  draft: InvoiceDraft;
+  missing_fields: string[];
+  question: string | null;
+  existing_customer: boolean;
+  similar_customers: { id: string; name: string }[];
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface PendingActionOut {
+  id: string;
+  action_type: string;
+  summary: string;
+  expires_at: string;
+}

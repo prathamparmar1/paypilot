@@ -6,6 +6,7 @@ from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import setup_logging
 from app.routers import health
+from app.routers import auth, business, health
 
 setup_logging()
 settings = get_settings()
@@ -23,6 +24,8 @@ app.add_middleware(
 
 register_error_handlers(app)
 app.include_router(health.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(business.router, prefix="/api/v1")
 
 
 @app.on_event("startup")
